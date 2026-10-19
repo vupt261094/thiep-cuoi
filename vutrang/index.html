@@ -1,6 +1,17 @@
 <!doctype html>
 <html data-theme="light">
 <head>
+<script>
+(function () {
+  if (location.protocol === "file:") return;
+  var path = location.pathname;
+  if (path.endsWith("/index.html")) path = path.slice(0, -"/index.html".length);
+  else if (!path.endsWith("/")) path += "/";
+  var base = document.createElement("base");
+  base.href = path;
+  document.head.appendChild(base);
+})();
+</script>
 <title>Vũ & Trang · Sau tất cả, là Thương</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="fonts.css">
