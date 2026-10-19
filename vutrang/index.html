@@ -996,7 +996,7 @@ if (!reduce) draw();
 (() => {
   const lb = $("#lightbox");
   const pic = $("#lb-img");
-  const photos = [...document.querySelectorAll("img")].filter(im => im.id !== "lb-img" && !im.closest(".env-bloom") && !im.classList.contains("thanks-flora"));
+  const photos = [...document.querySelectorAll("img")].filter(im => im.id !== "lb-img" && !im.closest(".env-bloom") && !im.closest(".qr") && !im.classList.contains("thanks-flora"));
   let index = 0;
   const show = i => {
     if (!photos.length) return;
