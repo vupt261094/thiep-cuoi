@@ -869,7 +869,7 @@ function openInvite() {
   burst();
   startMusic();
   const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const wait = calm ? 0 : 3200;
+  const wait = calm ? 0 : 3600;
   const fade = calm ? 0 : 800;
   setTimeout(() => document.body.classList.add("revealing"), wait);
   setTimeout(() => {
@@ -908,7 +908,7 @@ if (!reduce) draw();
 (() => {
   const lb = $("#lightbox");
   const pic = $("#lb-img");
-  const photos = [...document.querySelectorAll("img")].filter(im => im.id !== "lb-img");
+  const photos = [...document.querySelectorAll("img")].filter(im => im.id !== "lb-img" && !im.closest(".env-bloom"));
   let index = 0;
   const show = i => {
     if (!photos.length) return;
