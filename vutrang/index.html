@@ -251,6 +251,33 @@ textarea{min-height:96px;resize:vertical}
 }
 @keyframes thanksIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .pop-card{animation:thanksIn .45s cubic-bezier(.22,.8,.28,1) both}
+.welcome{position:fixed;inset:0;z-index:70;overflow:hidden;background:#FBF1E7;touch-action:none}
+.welcome[hidden]{display:none}
+.welcome-card{position:relative;container-type:inline-size;width:100%;height:100%;background:#FBF1E7;border:0;border-radius:0;padding:72px 18vw 56px;text-align:center;display:flex;flex-direction:column;justify-content:center;animation:thanksIn .7s cubic-bezier(.22,.8,.28,1) both}
+.welcome-card .thanks-flora.calla{height:min(420px,46vh);top:-20px;left:-24px}
+.welcome-card .thanks-flora.orchid{height:min(380px,42vh);bottom:-22px;right:-24px}
+.welcome-kicker,.welcome-name,.welcome-lead,.welcome-rule,.welcome-when,.welcome-place,.welcome-hint{position:relative;z-index:3}
+.welcome-kicker{margin:0;font-size:13px;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);font-weight:500}
+.welcome-name{margin:10px 0 0;font-family:var(--f-script);font-weight:400;font-size:clamp(44px,12cqw,92px);line-height:1.05;color:var(--ink);text-wrap:balance;overflow-wrap:anywhere}
+.welcome-lead{margin:18px auto 0;max-width:22em;font-family:var(--f-display);font-style:italic;font-weight:300;font-size:clamp(16px,2.4cqw,20px);line-height:1.55;color:var(--ink-soft)}
+.welcome-rule{display:flex;align-items:center;gap:10px;width:min(180px,60%);margin:20px auto 16px}
+.welcome-rule::before,.welcome-rule::after{content:"";height:1px;flex:1;background:var(--line)}
+.welcome-rule i{width:6px;height:6px;background:var(--gold);transform:rotate(45deg)}
+.welcome-when{margin:0;color:var(--ink);font-size:16px;font-weight:400}
+.welcome-place{margin:6px 0 0;color:var(--ink-soft);font-size:14.5px}
+.welcome-hint{margin:26px 0 0;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);font-weight:500}
+.welcome-hint::after{content:"";display:block;width:8px;height:8px;margin:10px auto 0;border-right:1.5px solid var(--gold);border-bottom:1.5px solid var(--gold);transform:rotate(45deg);animation:welcomeNudge 1.5s ease-in-out infinite}
+@keyframes welcomeNudge{50%{transform:translateY(5px) rotate(45deg)}}
+@media (max-width:560px){
+  .welcome-card{width:100%;height:100%;border-radius:0;padding:64px 28px 36px}
+  .welcome-card .thanks-flora.calla{height:168px;top:-10px;left:-8px}
+  .welcome-card .thanks-flora.orchid{height:150px;bottom:-12px;right:-8px}
+  .welcome-lead{font-size:15px}
+  .welcome-when{font-size:14.5px}
+  .welcome-place{font-size:13px}
+  .welcome-hint{margin-top:18px}
+}
+body.welcome-open{overflow:hidden}
 .hint{font-size:13px;color:var(--ink-soft);text-align:center;margin:0}
 
 /* MỪNG CƯỚI */
@@ -507,6 +534,19 @@ body.revealing .fab{visibility:visible;animation:coverin 1.15s cubic-bezier(.22,
 <button class="music-fab" id="mute" type="button" hidden aria-label="Tắt nhạc"></button>
 
 <canvas id="petals" aria-hidden="true"></canvas>
+<div class="welcome" id="welcome" hidden>
+  <div class="welcome-card" role="region" aria-label="Thư mời">
+    <img class="thanks-flora calla" id="welcome-calla" alt="" aria-hidden="true">
+    <img class="thanks-flora orchid" id="welcome-orchid" alt="" aria-hidden="true">
+    <p class="welcome-kicker">Thân mời</p>
+    <h2 class="welcome-name" id="welcome-name"></h2>
+    <p class="welcome-lead">Vũ &amp; Trang trân trọng kính mời bạn có mặt,<br>trong ngày chúng mình về chung một nhà.</p>
+    <div class="welcome-rule" aria-hidden="true"><i></i></div>
+    <p class="welcome-when">17:00 · Thứ Bảy, 28.11.2026</p>
+    <p class="welcome-place" id="welcome-place"></p>
+    <p class="welcome-hint">Cuộn xuống để mở thiệp</p>
+  </div>
+</div>
 <main>
 
 <section class="hero" id="top">
@@ -869,6 +909,8 @@ tick(); setInterval(tick, 1000);
 })();
 
 /* Xác nhận */
+const guestName = new URLSearchParams(location.search).get("ten");
+if (guestName && guestName.trim()) $("#r-name").value = guestName.trim();
 $("#rsvp").addEventListener("submit", async e => {
   e.preventDefault();
   const name = $("#r-name").value.trim();
@@ -977,11 +1019,79 @@ function openInvite() {
   const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const wait = calm ? 0 : 3600;
   const fade = calm ? 0 : 800;
-  setTimeout(() => document.body.classList.add("revealing"), wait);
+  setTimeout(() => {
+    document.body.classList.add("revealing");
+    showWelcome();
+  }, wait);
   setTimeout(() => {
     document.body.classList.remove("cover");
     window.scrollTo(0, 0);
   }, wait + fade);
+}
+function showWelcome() {
+  const calla = document.querySelector("#thanks-pop .thanks-flora.calla");
+  const orchid = document.querySelector("#thanks-pop .thanks-flora.orchid");
+  if (calla) $("#welcome-calla").src = calla.src;
+  if (orchid) $("#welcome-orchid").src = orchid.src;
+  const name = (new URLSearchParams(location.search).get("ten") || "").trim();
+  $("#welcome-name").textContent = name || "Quý khách";
+  $("#welcome-place").textContent = CONFIG.hall.replace(/^Sảnh\s/, "") + " · " + CONFIG.address;
+  const el = $("#welcome");
+  el.hidden = false;
+  el.style.opacity = "1";
+  document.body.classList.add("welcome-open");
+  const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const main = document.querySelector("main");
+  const travel = calm ? 0 : Math.round(Math.min(innerHeight * 0.22, 180));
+  let progress = 0, done = false;
+  const paint = () => {
+    const leave = Math.min(1, progress / 0.5);
+    const enter = Math.max(0, (progress - 0.5) / 0.5);
+    el.style.opacity = String(1 - leave);
+    main.style.opacity = String(enter);
+    main.style.transform = `translateY(${(1 - enter) * travel}px)`;
+  };
+  const step = delta => {
+    if (done) return;
+    progress = Math.min(1, Math.max(0, progress + delta));
+    paint();
+    if (progress >= 1) finish();
+  };
+  const finish = () => {
+    if (done) return;
+    done = true;
+    el.style.opacity = "0";
+    main.style.opacity = "";
+    main.style.transform = "";
+    document.body.classList.remove("welcome-open");
+    el.removeEventListener("wheel", onWheel);
+    el.removeEventListener("touchstart", onStart);
+    el.removeEventListener("touchmove", onMove);
+    removeEventListener("keydown", onKey);
+    setTimeout(() => { el.hidden = true; }, 240);
+  };
+  const onWheel = e => {
+    e.preventDefault();
+    step(e.deltaY / (calm ? 48 : 680));
+  };
+  let lastY = 0;
+  const onStart = e => { lastY = e.touches[0].clientY; };
+  const onMove = e => {
+    const y = e.touches[0].clientY;
+    const dy = lastY - y;
+    lastY = y;
+    e.preventDefault();
+    step(dy / (calm ? 36 : 340));
+  };
+  const onKey = e => {
+    if (e.key === "ArrowDown" || e.key === "PageDown" || e.key === " ") { e.preventDefault(); step(calm ? 1 : .34); }
+    else if (e.key === "ArrowUp" || e.key === "PageUp") { e.preventDefault(); step(calm ? -1 : -.34); }
+  };
+  el.addEventListener("wheel", onWheel, { passive: false });
+  el.addEventListener("touchstart", onStart, { passive: true });
+  el.addEventListener("touchmove", onMove, { passive: false });
+  addEventListener("keydown", onKey);
+  paint();
 }
 $("#seal").addEventListener("click", e => { e.stopPropagation(); openInvite(); });
 env.addEventListener("click", openInvite);

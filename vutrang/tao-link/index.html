@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tạo link thiệp · Vũ &amp; Trang</title>
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../fonts.css">
+<style>
+:root{
+  --paper:#F8F3EB; --card:#FFFCF7;
+  --ink:#3C2A22; --ink-soft:#7A6558; --rose:#8E3A45; --gold:#C4A15E; --line:#E4D3C0;
+  --f-body:"Be Vietnam Pro",system-ui,sans-serif;
+  --f-script:"Great Vibes",cursive;
+}
+*{box-sizing:border-box}
+body{margin:0;min-height:100dvh;display:grid;place-items:center;padding:28px 16px;background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.6;font-weight:300;-webkit-font-smoothing:antialiased}
+.card{width:min(520px,100%);background:var(--card);border:1px solid var(--line);border-radius:4px;padding:32px 24px}
+h1{margin:0;font-family:var(--f-script);font-weight:400;font-size:48px;line-height:1;text-align:center}
+p{margin:12px 0 0;text-align:center;color:var(--ink-soft)}
+form{display:grid;gap:14px;margin-top:28px}
+label{font-size:13px;font-weight:500;letter-spacing:.04em;display:block;margin-bottom:6px}
+input{width:100%;font:inherit;font-size:15px;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:3px;padding:11px 12px}
+button{font:500 14px/1 var(--f-body);cursor:pointer;border-radius:999px;padding:12px 22px}
+.make{border:1px solid var(--ink);background:var(--ink);color:var(--paper)}
+.out{display:grid;gap:10px;margin-top:18px}
+.out[hidden]{display:none}
+.copy{border:1px solid var(--ink);background:transparent;color:var(--ink)}
+</style>
+</head>
+<body>
+  <main class="card">
+    <h1>Tạo link thiệp</h1>
+    <p>Nhập tên khách. Link tạo ra sẽ điền sẵn tên đó vào ô xác nhận tham dự.</p>
+    <form id="make">
+      <div>
+        <label for="guest">Tên khách</label>
+        <input id="guest" autocomplete="name" placeholder="VD: Nguyễn Minh Anh">
+      </div>
+      <button class="make" type="submit">Tạo link</button>
+    </form>
+    <div class="out" id="out" hidden>
+      <label for="link">Link thiệp</label>
+      <input id="link" readonly>
+      <button class="copy" id="copy" type="button">Sao chép link</button>
+    </div>
+  </main>
+<script>
+function inviteLink(name) {
+  const url = new URL(location.href);
+  let path = url.pathname;
+  if (path.endsWith("/index.html")) path = path.slice(0, -"index.html".length);
+  path = path.replace(/\/tao-link\/?$/, "/");
+  if (location.protocol === "file:") path += "index.html";
+  url.pathname = path;
+  url.search = "";
+  url.hash = "";
+  url.searchParams.set("ten", name.trim());
+  return url.toString();
+}
+const guest = document.getElementById("guest");
+const out = document.getElementById("out");
+const link = document.getElementById("link");
+const copy = document.getElementById("copy");
+document.getElementById("make").addEventListener("submit", e => {
+  e.preventDefault();
+  const name = guest.value.trim();
+  if (!name) { guest.focus(); return; }
+  link.value = inviteLink(name);
+  out.hidden = false;
+  link.focus();
+  link.select();
+});
+copy.addEventListener("click", async () => {
+  link.focus();
+  link.select();
+  try {
+    await navigator.clipboard.writeText(link.value);
+    copy.textContent = "Đã sao chép";
+  } catch (err) {
+    copy.textContent = "Hãy chọn và sao chép";
+  }
+  setTimeout(() => { copy.textContent = "Sao chép link"; }, 1600);
+});
+</script>
+</body>
+</html>
