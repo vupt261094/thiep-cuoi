@@ -527,7 +527,8 @@ body.cover .env-col{max-width:none;width:100%}
 body.cover .inv-row{display:none}
 body.cover main>section:not(.invite){opacity:0}
 body.cover .envelope{width:100%;cursor:pointer}
-body.cover.handing .invite,body.cover.revealing .invite{transition:opacity 1.25s cubic-bezier(.4,0,.2,1),transform 1.25s cubic-bezier(.4,0,.2,1);opacity:0;transform:translateY(-28px) scale(.985);pointer-events:none}
+body.cover.revealing .invite{transition:opacity .95s cubic-bezier(.4,0,.2,1),transform .95s cubic-bezier(.4,0,.2,1);opacity:0;transform:translateY(-14px) scale(.992);pointer-events:none}
+body.cover.handing .invite{transition:opacity 1.25s cubic-bezier(.4,0,.2,1),transform 1.25s cubic-bezier(.4,0,.2,1);opacity:0;transform:translateY(-28px) scale(.985);pointer-events:none}
 body.revealing main>section:not(.invite){animation:coverin 1.15s cubic-bezier(.22,.8,.28,1) both}
 body.revealing .fab{visibility:visible;animation:coverin 1.15s cubic-bezier(.22,.8,.28,1) .28s both}
 @keyframes coverin{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
@@ -1021,6 +1022,16 @@ function openInvite() {
   startMusic();
   const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const wait = calm ? 0 : 3600;
+  const named = (new URLSearchParams(location.search).get("ten") || "").trim();
+  if (!named) {
+    const fade = calm ? 0 : 800;
+    setTimeout(() => document.body.classList.add("revealing"), wait);
+    setTimeout(() => {
+      document.body.classList.remove("cover");
+      window.scrollTo(0, 0);
+    }, wait + fade);
+    return;
+  }
   const settle = calm ? 0 : 800;
   const handoff = calm ? 0 : 1250;
   setTimeout(() => document.body.classList.add("handing"), wait + settle);
@@ -1032,12 +1043,13 @@ function openInvite() {
   }, wait + settle + handoff);
 }
 function showWelcome() {
+  const name = (new URLSearchParams(location.search).get("ten") || "").trim();
+  if (!name) return;
   const calla = document.querySelector("#thanks-pop .thanks-flora.calla");
   const orchid = document.querySelector("#thanks-pop .thanks-flora.orchid");
   if (calla) $("#welcome-calla").src = calla.src;
   if (orchid) $("#welcome-orchid").src = orchid.src;
-  const name = (new URLSearchParams(location.search).get("ten") || "").trim();
-  $("#welcome-name").textContent = name || "Quý khách";
+  $("#welcome-name").textContent = name;
   $("#welcome-place").textContent = CONFIG.hall.replace(/^Sảnh\s/, "") + " · " + CONFIG.address;
   const el = $("#welcome");
   el.hidden = false;
