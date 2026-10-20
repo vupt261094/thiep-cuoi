@@ -253,7 +253,10 @@ textarea{min-height:96px;resize:vertical}
 .pop-card{animation:thanksIn .45s cubic-bezier(.22,.8,.28,1) both}
 .welcome{position:fixed;inset:0;z-index:70;overflow:hidden;background:#FBF1E7;touch-action:none}
 .welcome[hidden]{display:none}
-.welcome-card{position:relative;container-type:inline-size;width:100%;height:100%;background:#FBF1E7;border:0;border-radius:0;padding:72px 18vw 56px;text-align:center;display:flex;flex-direction:column;justify-content:center;animation:thanksIn .7s cubic-bezier(.22,.8,.28,1) both}
+.welcome.is-in{animation:welcomeVeil 1.35s cubic-bezier(.22,.8,.28,1) both}
+@keyframes welcomeVeil{from{opacity:0}to{opacity:1}}
+@keyframes welcomeRise{from{opacity:0;transform:translateY(36px)}to{opacity:1;transform:none}}
+.welcome-card{position:relative;container-type:inline-size;width:100%;height:100%;background:#FBF1E7;border:0;border-radius:0;padding:72px 18vw 56px;text-align:center;display:flex;flex-direction:column;justify-content:center;animation:welcomeRise 1.45s cubic-bezier(.22,.8,.28,1) .15s both}
 .welcome-card .thanks-flora.calla{height:min(420px,46vh);top:-20px;left:-24px}
 .welcome-card .thanks-flora.orchid{height:min(380px,42vh);bottom:-22px;right:-24px}
 .welcome-kicker,.welcome-name,.welcome-lead,.welcome-rule,.welcome-when,.welcome-place,.welcome-hint{position:relative;z-index:3}
@@ -524,7 +527,7 @@ body.cover .env-col{max-width:none;width:100%}
 body.cover .inv-row{display:none}
 body.cover main>section:not(.invite){opacity:0}
 body.cover .envelope{width:100%;cursor:pointer}
-body.cover.revealing .invite{transition:opacity .95s cubic-bezier(.4,0,.2,1),transform .95s cubic-bezier(.4,0,.2,1);opacity:0;transform:translateY(-14px) scale(.992);pointer-events:none}
+body.cover.handing .invite,body.cover.revealing .invite{transition:opacity 1.25s cubic-bezier(.4,0,.2,1),transform 1.25s cubic-bezier(.4,0,.2,1);opacity:0;transform:translateY(-28px) scale(.985);pointer-events:none}
 body.revealing main>section:not(.invite){animation:coverin 1.15s cubic-bezier(.22,.8,.28,1) both}
 body.revealing .fab{visibility:visible;animation:coverin 1.15s cubic-bezier(.22,.8,.28,1) .28s both}
 @keyframes coverin{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
@@ -1018,15 +1021,15 @@ function openInvite() {
   startMusic();
   const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const wait = calm ? 0 : 3600;
-  const fade = calm ? 0 : 800;
+  const settle = calm ? 0 : 800;
+  const handoff = calm ? 0 : 1250;
+  setTimeout(() => document.body.classList.add("handing"), wait + settle);
+  setTimeout(() => showWelcome(), wait + settle + Math.round(handoff * 0.45));
   setTimeout(() => {
     document.body.classList.add("revealing");
-    showWelcome();
-  }, wait);
-  setTimeout(() => {
     document.body.classList.remove("cover");
     window.scrollTo(0, 0);
-  }, wait + fade);
+  }, wait + settle + handoff);
 }
 function showWelcome() {
   const calla = document.querySelector("#thanks-pop .thanks-flora.calla");
@@ -1038,24 +1041,44 @@ function showWelcome() {
   $("#welcome-place").textContent = CONFIG.hall.replace(/^Sảnh\s/, "") + " · " + CONFIG.address;
   const el = $("#welcome");
   el.hidden = false;
-  el.style.opacity = "1";
+  el.classList.add("is-in");
   document.body.classList.add("welcome-open");
   const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const main = document.querySelector("main");
-  const travel = calm ? 0 : Math.round(Math.min(innerHeight * 0.22, 180));
-  let progress = 0, done = false;
+  const travel = calm ? 0 : Math.round(Math.min(innerHeight * 0.28, 240));
+  let progress = 0, done = false, veil = true;
+  const releaseVeil = () => {
+    if (!veil) return;
+    veil = false;
+    const shown = parseFloat(getComputedStyle(el).opacity);
+    if (shown < 0.98) progress = (1 - shown) * 0.82;
+    el.style.animation = "none";
+  };
   const paint = () => {
-    const leave = Math.min(1, progress / 0.5);
-    const enter = Math.max(0, (progress - 0.5) / 0.5);
+    const leave = Math.min(1, progress / 0.82);
+    const enter = Math.min(1, Math.max(0, (progress - 0.18) / 0.72));
     el.style.opacity = String(1 - leave);
     main.style.opacity = String(enter);
     main.style.transform = `translateY(${(1 - enter) * travel}px)`;
   };
-  const step = delta => {
-    if (done) return;
-    progress = Math.min(1, Math.max(0, progress + delta));
-    paint();
-    if (progress >= 1) finish();
+  let playing = false;
+  const play = () => {
+    if (done || playing) return;
+    releaseVeil();
+    playing = true;
+    const from = progress;
+    const duration = calm ? 0 : 2000;
+    const t0 = performance.now();
+    const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    const frame = now => {
+      if (done) return;
+      const t = duration ? Math.min(1, (now - t0) / duration) : 1;
+      progress = from + (1 - from) * ease(t);
+      paint();
+      if (t < 1) requestAnimationFrame(frame);
+      else finish();
+    };
+    requestAnimationFrame(frame);
   };
   const finish = () => {
     if (done) return;
@@ -1069,10 +1092,17 @@ function showWelcome() {
     el.removeEventListener("touchmove", onMove);
     removeEventListener("keydown", onKey);
     setTimeout(() => { el.hidden = true; }, 240);
+    setTimeout(() => {
+      blocking = false;
+      removeEventListener("wheel", blockScroll, true);
+      removeEventListener("touchmove", blockScroll, true);
+    }, 600);
   };
+  let blocking = true;
+  const blockScroll = e => { if (blocking) e.preventDefault(); };
   const onWheel = e => {
     e.preventDefault();
-    step(e.deltaY / (calm ? 48 : 680));
+    if (e.deltaY > 0) play();
   };
   let lastY = 0;
   const onStart = e => { lastY = e.touches[0].clientY; };
@@ -1081,17 +1111,20 @@ function showWelcome() {
     const dy = lastY - y;
     lastY = y;
     e.preventDefault();
-    step(dy / (calm ? 36 : 340));
+    if (dy > 10) play();
   };
   const onKey = e => {
-    if (e.key === "ArrowDown" || e.key === "PageDown" || e.key === " ") { e.preventDefault(); step(calm ? 1 : .34); }
-    else if (e.key === "ArrowUp" || e.key === "PageUp") { e.preventDefault(); step(calm ? -1 : -.34); }
+    if (e.key === "ArrowDown" || e.key === "PageDown" || e.key === " ") { e.preventDefault(); play(); }
+    else if (e.key === "ArrowUp" || e.key === "PageUp") e.preventDefault();
   };
   el.addEventListener("wheel", onWheel, { passive: false });
   el.addEventListener("touchstart", onStart, { passive: true });
   el.addEventListener("touchmove", onMove, { passive: false });
+  addEventListener("wheel", blockScroll, { passive: false, capture: true });
+  addEventListener("touchmove", blockScroll, { passive: false, capture: true });
   addEventListener("keydown", onKey);
-  paint();
+  main.style.opacity = "0";
+  main.style.transform = `translateY(${travel}px)`;
 }
 $("#seal").addEventListener("click", e => { e.stopPropagation(); openInvite(); });
 env.addEventListener("click", openInvite);
